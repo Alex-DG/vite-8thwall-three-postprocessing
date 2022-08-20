@@ -1,21 +1,38 @@
 import { TexturePass } from 'three/examples/jsm/postprocessing/TexturePass'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
 
-import { combineShaderFrag, combineShaderVert } from './combinedShader'
+import {
+  Scene,
+  PerspectiveCamera,
+  WebGLRenderer,
+  Vector2,
+  MathUtils,
+  DataTexture,
+  RGBFormat,
+  Color,
+  WebGLRenderTarget,
+  ReinhardToneMapping,
+} from 'three'
 
+import { UnrealBloomPass } from './Config/Postprocessing/AlphaUnrealBloomPass.js'
+
+import {
+  combineShaderFrag,
+  combineShaderVert,
+} from './Config/Shaders/CombinedShader.js'
+
+// Unreal Bloom Configuration
 const params = {
   exposure: 1,
-  strength: 1.5,
+  strength: 2,
   threshold: 0,
-  radius: 0,
+  radius: 0.2,
 }
 
 /**
  * Scene setters
  */
-
 const setSizes = ({ canvasWidth, canvasHeight }) => {
   const sizes = {
     width: canvasWidth,
@@ -25,15 +42,15 @@ const setSizes = ({ canvasWidth, canvasHeight }) => {
 }
 
 const setScene = () => {
-  const scene = new THREE.Scene()
+  const scene = new Scene()
   return scene
 }
 
 const setCamera = ({ sizes }) => {
   const aspect = sizes.width / sizes.height
-  const camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000)
+  const camera = new PerspectiveCamera(75, aspect, 0.1, 1000)
 
-  camera.position.set(0, 2, 10)
+  camera.position.set(0, 2, 15)
 
   XR8.XrController.updateCameraProjectionMatrix({
     origin: camera.position,
@@ -43,49 +60,78 @@ const setCamera = ({ sizes }) => {
   return camera
 }
 
-const setRenderer = ({ canvas, sizes, GLctx }) => {
-  const renderer = new THREE.WebGLRenderer({
+const setRenderer = ({ canvas, GLctx }) => {
+  const renderer = new WebGLRenderer({
     canvas,
     context: GLctx,
     alpha: true,
     antialias: true,
   })
-
   renderer.debug.checkShaderErrors = false // speeds up loading new materials
   renderer.autoClear = false
   renderer.autoClearDepth = false
   renderer.setClearColor(0xffffff, 0)
-  renderer.toneMapping = THREE.ReinhardToneMapping
+  renderer.toneMapping = ReinhardToneMapping
   renderer.toneMappingExposure = params.exposure
+  // renderer.setSize(canvasWidth, canvasHeight)
 
   return renderer
 }
 
-/**
- * Define an 8th Wall XR Camera Pipeline Module that adds a cube to a threejs scene on startup.
- */
+const setPostprocessing = ({ renderer, combineShader, sizes }) => {
+  const sceneTarget = new WebGLRenderTarget(sizes.width, sizes.height, {
+    generateMipmaps: false,
+  })
+
+  // Bloom Composer
+  const bloomComposer = new EffectComposer(renderer)
+  bloomComposer.renderToScreen = false
+
+  // Copy scene into bloom
+  const copyPass = new TexturePass(sceneTarget.texture)
+  bloomComposer.addPass(copyPass)
+
+  // Bloom Pass
+  const bloomPass = new UnrealBloomPass(
+    new Vector2(sizes.width, sizes.height),
+    1.5,
+    0.4,
+    0.85
+  )
+  bloomPass.clearColor = new Color(0xffffff)
+  bloomPass.threshold = params.threshold
+  bloomPass.strength = params.strength
+  bloomPass.radius = params.radius
+
+  bloomComposer.addPass(bloomPass)
+
+  // Final composer
+  const composer = new EffectComposer(renderer)
+  composer.addPass(copyPass)
+
+  // Combine scene and camerafeed pass
+  const combinePass = new ShaderPass(combineShader)
+  combinePass.clear = false
+  combinePass.renderToScreen = true
+  composer.addPass(combinePass)
+
+  return {
+    bloomComposer,
+    composer,
+    combinePass,
+    bloomPass,
+    sceneTarget,
+    copyPass,
+    sceneTarget,
+  }
+}
 
 export const initXRScenePipelineModule = () => {
-  let engaged = false
+  let isSetup = false
+  let xrSceneData = null
+  let cameraTexture = null
 
-  // Scene setup
-  let scene
-  let camera
-  let renderer
-  let sizes
-
-  let xrSceneData
-
-  // Post processing setup
-  let cameraTexture
-  let sceneTarget
-  let bloomComposer
-  let copyPass
-  let bloomPass
-  let composer
-  let combinePass
-
-  const cameraTextureCopyPosition = new THREE.Vector2(0, 0)
+  const cameraTextureCopyPosition = new Vector2(0, 0)
   const combineShader = {
     uniforms: {
       cameraTexture: { value: undefined },
@@ -96,94 +142,70 @@ export const initXRScenePipelineModule = () => {
     vertexShader: combineShaderVert,
   }
 
-  ////////////////////////////////////////////////////////////////////////////////
-
   const xrScene = () => xrSceneData
 
   const initXrScene = ({ canvas, canvasWidth, canvasHeight, GLctx }) => {
-    if (engaged) return
+    if (isSetup) return
+
+    isSetup = true
 
     // Sizes
-    sizes = setSizes({ canvasWidth, canvasHeight })
+    const sizes = setSizes({ canvasWidth, canvasHeight })
+
     // Scene
-    scene = setScene()
+    const scene = setScene()
+
     // Camera
-    camera = setCamera({ sizes })
+    const camera = setCamera({ sizes })
     scene.add(camera)
+
     // Renderer.
-    renderer = setRenderer({ canvas, sizes, GLctx })
+    const renderer = setRenderer({ canvas, sizes, GLctx })
 
-    /**
-     * POST-PROCESSING
-     */
-    sceneTarget = new THREE.WebGLRenderTarget(canvasWidth, canvasHeight, {
-      generateMipmaps: false,
-    })
+    // Post processing
 
-    // Bloom Composer
-    bloomComposer = new EffectComposer(renderer)
-    bloomComposer.renderToScreen = false
-
-    // Copy scene into bloom
-    copyPass = new TexturePass(sceneTarget.texture)
-    bloomComposer.addPass(copyPass)
-
-    bloomPass = new UnrealBloomPass(
-      new THREE.Vector2(canvasWidth, canvasHeight),
-      2,
-      0.2,
-      0
-    )
-    bloomPass.clearColor = new THREE.Color(0xffffff)
-    bloomComposer.addPass(bloomPass)
-
-    // Final composer
-    composer = new EffectComposer(renderer)
-    composer.addPass(copyPass)
-
-    // Combine scene and camerafeed pass
-    combinePass = new ShaderPass(combineShader)
-    combinePass.clear = false
-    combinePass.renderToScreen = true
-    composer.addPass(combinePass)
+    const {
+      combinePass,
+      bloomPass,
+      sceneTarget,
+      copyPass,
+      bloomComposer,
+      composer,
+    } = setPostprocessing({ renderer, combineShader, sizes })
 
     // XR Scene Data
-    xrSceneData = { scene, camera, renderer }
-    window.xrSceneData = xrSceneData
+    xrSceneData = {
+      scene,
+      camera,
+      renderer,
+      bloomComposer,
+      composer,
+      combinePass,
+      bloomPass,
+      sceneTarget,
+      copyPass,
+      sceneTarget,
+    }
+
     window.XR8.Threejs.xrScene = xrScene
-
-    // Prevent scroll/pinch gestures on canvas
-    canvas.addEventListener('touchmove', (event) => {
-      event.preventDefault()
-    })
-
-    // Ready ✨
-    engaged = true
-    console.log('🤖', 'XR Scene ready')
   }
 
-  // This is a workaround for https://bugs.webkit.org/show_bug.cgi?id=237230
-  // Once the fix is released, we can add `&& parseFloat(device.osVersion) < 15.x`
-  const device = XR8.XrDevice.deviceEstimate()
-  const needsPrerenderFinish =
-    device.os === 'iOS' && parseFloat(device.osVersion) >= 15.4
-
   return {
-    name: 'init',
-
-    // onStart is called once when the camera feed begins. In this case, we need to wait for the
-    onStart: (args) => initXrScene(args), // Add objects set the starting camera position.
-
+    name: 'customthreejs',
+    onStart: (args) => initXrScene(args),
     onDetach: () => {
-      engaged = false
+      isSetup = false
     },
     onUpdate: ({ processCpuResult }) => {
       const realitySource =
         processCpuResult.reality || processCpuResult.facecontroller
 
-      if (!realitySource) return
+      if (!realitySource) {
+        return
+      }
 
       const { rotation, position, intrinsics } = realitySource
+      const { camera } = xrSceneData
 
       for (let i = 0; i < 16; i++) {
         camera.projectionMatrix.elements[i] = intrinsics[i]
@@ -194,18 +216,15 @@ export const initXRScenePipelineModule = () => {
       // Note: camera.projectionMatrixInverse wasn't introduced until r96 so check before setting
       // the inverse
       if (camera.projectionMatrixInverse) {
-        if (camera.projectionMatrixInverse.invert) {
-          // THREE 123 preferred version
-          camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert()
-        } else {
-          // Backwards compatible version
-          camera.projectionMatrixInverse.getInverse(camera.projectionMatrix)
-        }
+        camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert()
       }
 
-      if (rotation) camera.setRotationFromQuaternion(rotation)
-
-      if (position) camera.position.set(position.x, position.y, position.z)
+      if (rotation) {
+        camera.setRotationFromQuaternion(rotation)
+      }
+      if (position) {
+        camera.position.set(position.x, position.y, position.z)
+      }
     },
     onCanvasSizeChange: ({
       canvasWidth,
@@ -213,19 +232,28 @@ export const initXRScenePipelineModule = () => {
       videoWidth,
       videoHeight,
     }) => {
-      if (!engaged) return
+      if (!isSetup) {
+        return
+      }
+      const {
+        renderer,
+        bloomComposer,
+        composer,
+        combinePass,
+        bloomPass,
+        copyPass,
+        sceneTarget,
+      } = xrSceneData
 
-      setSizes({ canvasWidth, canvasHeight })
-
-      cameraTexture = new THREE.DataTexture(
+      cameraTexture = new DataTexture(
         new Uint8Array(canvasWidth * canvasHeight * 3),
         canvasWidth,
         canvasHeight,
-        THREE.RGBAFormat
+        RGBFormat
       )
 
       renderer.setSize(canvasWidth, canvasHeight)
-      const pixelRatio = THREE.MathUtils.clamp(window.devicePixelRatio, 1, 2)
+      const pixelRatio = MathUtils.clamp(window.devicePixelRatio, 1, 2)
       renderer.pixelRatio = pixelRatio
 
       // Update render pass sizes
@@ -251,6 +279,8 @@ export const initXRScenePipelineModule = () => {
       }
     },
     onRender: () => {
+      const { camera, scene, renderer, sceneTarget, bloomComposer, composer } =
+        xrSceneData
       if (cameraTexture) {
         renderer.copyFramebufferToTexture(
           cameraTextureCopyPosition,
@@ -267,17 +297,9 @@ export const initXRScenePipelineModule = () => {
 
       bloomComposer.render()
       composer.render()
-
-      // Working:
-      // renderer.clearDepth()
-
-      // if (needsPrerenderFinish) {
-      //   renderer.getContext().finish()
-      //   // renderer.getContext().flush()
-      // }
-
-      // renderer.render(scene, camera)
     },
-    xrScene: () => xrScene,
+
+    // Get a handle to the xr scene, camera, renderer, and composers
+    xrScene,
   }
 }

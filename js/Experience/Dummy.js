@@ -1,3 +1,5 @@
+import * as THREE from 'three'
+
 /**
  * Dummy cube
  */
@@ -12,8 +14,6 @@ class Dummy {
       new THREE.BoxGeometry(1, 1, 1),
       new THREE.MeshNormalMaterial({ wireframe: false })
     )
-    // this.instance.position.z = -5
-    this.instance.position.y = 1
     this.scene.add(this.instance)
   }
 

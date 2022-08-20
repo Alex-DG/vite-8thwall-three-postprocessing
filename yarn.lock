@@ -10,18 +10,6 @@
     estree-walker "^2.0.1"
     picomatch "^2.2.2"
 
-"@types/three@^0.141.0":
-  version "0.141.0"
-  resolved "https://registry.yarnpkg.com/@types/three/-/three-0.141.0.tgz#d9d81a54b28ebc2a56931dfd4d9c54d25c20d6c8"
-  integrity sha512-OJdKDgTPVBUgc+s74DYoy4aLznbFFC38Xm4ElmU1YwGNgR7GGFVvFCX7lpVgOsT6S1zSJtGdajTsOYE8/xY9nA==
-  dependencies:
-    "@types/webxr" "*"
-
-"@types/webxr@*":
-  version "0.4.0"
-  resolved "https://registry.yarnpkg.com/@types/webxr/-/webxr-0.4.0.tgz#ad06c96a324293e0d5175d13dd5ded5931f90ba3"
-  integrity sha512-LQvrACV3Pj17GpkwHwXuTd733gfY+D7b9mKdrTmLdO7vo7P/o6209Qqtk63y/FCv/lspdmi0pWz6Qe/ull9kQg==
-
 esbuild-android-64@0.14.47:
   version "0.14.47"
   resolved "https://registry.yarnpkg.com/esbuild-android-64/-/esbuild-android-64-0.14.47.tgz#ef95b42c67bcf4268c869153fa3ad1466c4cea6b"
@@ -232,10 +220,10 @@ supports-preserve-symlinks-flag@^1.0.0:
   resolved "https://registry.yarnpkg.com/supports-preserve-symlinks-flag/-/supports-preserve-symlinks-flag-1.0.0.tgz#6eda4bd344a3c94aea376d4cc31bc77311039e09"
   integrity sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==
 
-three@^0.141.0:
-  version "0.141.0"
-  resolved "https://registry.yarnpkg.com/three/-/three-0.141.0.tgz#16677a12b9dd0c3e1568ebad0fd09de15d5a8216"
-  integrity sha512-JaSDAPWuk4RTzG5BYRQm8YZbERUxTfTDVouWgHMisS2to4E5fotMS9F2zPFNOIJyEFTTQDDKPpsgZVThKU3pXA==
+three@0.135.0:
+  version "0.135.0"
+  resolved "https://registry.yarnpkg.com/three/-/three-0.135.0.tgz#cff4ec8edd3c51ce9bc7e88d13e8eafed4d0ddfc"
+  integrity sha512-kuEpuuxRzLv0MDsXai9huCxOSQPZ4vje6y0gn80SRmQvgz6/+rI0NAvCRAw56zYaWKMGMfqKWsxF9Qa2Z9xymQ==
 
 tslib@^2.3.1:
   version "2.4.0"
