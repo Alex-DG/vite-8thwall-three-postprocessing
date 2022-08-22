@@ -9,7 +9,7 @@ class DebugPane_ {
   createFolder(folderName, expanded = true) {
     try {
       const doesExist = this.folders.some(({ name }) => name === folderName)
-      console.log({ doesExist, folderName, pane: this.pane })
+
       if (!doesExist) {
         const newFolder = this.pane.addFolder({
           title: folderName,
@@ -30,8 +30,6 @@ class DebugPane_ {
     try {
       let f
       if (folderName) f = this.folders.find(({ name }) => name === folderName)
-
-      console.log({ f, folders: this.folders })
 
       if (f) {
         f.folder.addInput(obj, name, params)
