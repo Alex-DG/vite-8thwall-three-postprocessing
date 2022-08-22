@@ -21,6 +21,7 @@ import {
   combineShaderFrag,
   combineShaderVert,
 } from './Config/Shaders/CombinedShader.js'
+import { debugBloomPass, debugRenderer } from './Config/Debug/index.js'
 
 // Unreal Bloom Configuration
 const params = {
@@ -74,6 +75,7 @@ const setRenderer = ({ canvas, GLctx }) => {
   renderer.toneMapping = ReinhardToneMapping
   renderer.toneMappingExposure = params.exposure
   // renderer.setSize(canvasWidth, canvasHeight)
+  debugRenderer(renderer)
 
   return renderer
 }
@@ -103,6 +105,7 @@ const setPostprocessing = ({ renderer, combineShader, sizes }) => {
   bloomPass.strength = params.strength
   bloomPass.radius = params.radius
 
+  debugBloomPass(bloomPass)
   bloomComposer.addPass(bloomPass)
 
   // Final composer

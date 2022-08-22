@@ -20,6 +20,8 @@ class Badassium {
       this.createGeometryCenterAttribute.bind(this)
   }
 
+  debug() {}
+
   createGeometryCenterAttribute(r = 4, d = 4) {
     let geometry = new THREE.IcosahedronGeometry(r, d)
 
