@@ -49,10 +49,10 @@ class Badassium {
       this.textureLoader.loadAsync(alphaTextureSrc),
     ])
 
-    const geometry = this.createGeometryCenterAttribute()
+    const geometry = this.createGeometryCenterAttribute(2, 2)
 
     const atomMaterial = new THREE.PointsMaterial({
-      size: 0.8,
+      size: 0.25,
       color: 0x0567ba,
       map: baseTexture,
       alphaMap: alphaTexture,
@@ -67,14 +67,40 @@ class Badassium {
       transparent: true, // this is important for the alpha value to work in the fragment shader
     })
 
-    const spherePoints = new THREE.Points(geometry, atomMaterial)
-    const sphereLines = new THREE.Mesh(geometry, bondMaterial)
+    this.spherePoints = new THREE.Points(geometry, atomMaterial)
+    this.sphereLines = new THREE.Mesh(geometry, bondMaterial)
 
-    this.group.add(spherePoints, sphereLines)
+    this.group.add(this.spherePoints, this.sphereLines)
+    this.hide()
+  }
+
+  show({ detail }) {
+    if (detail.name === 'sphere_target' && !this.group.visible) {
+      this.group.position.copy(detail.position)
+      this.group.quaternion.copy(detail.rotation)
+
+      // const shift = Math.abs(this.group.position.z / 2)
+      // // this.group.position.x += shift
+      // // this.group.position.y += shift
+      // this.group.position.z += shift
+
+      const scale = detail.scale / 1.5
+      this.group.scale.set(scale, scale, scale)
+      this.group.visible = true
+    }
+  }
+
+  hide() {
+    this.group.visible = false
   }
 
   update() {
-    this.group.rotation.y += 0.01
+    if (this.spherePoints) {
+      this.spherePoints.rotation.y += 0.01
+    }
+    if (this.sphereLines) {
+      this.sphereLines.rotation.y += 0.01
+    }
   }
 }
 

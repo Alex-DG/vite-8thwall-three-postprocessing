@@ -41,10 +41,23 @@ class DebugPane_ {
     }
   }
 
-  addColorPicker(obj, name, params, callback) {
-    this.pane.addInput(obj, name, params).on('change', ({ value }) => {
-      callback(value)
-    })
+  addColorPicker(obj, name, params, callback, folderName) {
+    try {
+      let f
+      if (folderName) f = this.folders.find(({ name }) => name === folderName)
+
+      if (f) {
+        f.folder.addInput(obj, name, params).on('change', ({ value }) => {
+          callback(value)
+        })
+      } else {
+        this.pane.addInput(obj, name, params).on('change', ({ value }) => {
+          callback(value)
+        })
+      }
+    } catch (error) {
+      console.error('addSlider', { error })
+    }
   }
 }
 

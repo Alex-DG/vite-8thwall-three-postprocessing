@@ -51,7 +51,7 @@ const setCamera = ({ sizes }) => {
   const aspect = sizes.width / sizes.height
   const camera = new PerspectiveCamera(75, aspect, 0.1, 1000)
 
-  camera.position.set(0, 2, 15)
+  camera.position.set(0, 3, 0)
 
   XR8.XrController.updateCameraProjectionMatrix({
     origin: camera.position,
@@ -284,6 +284,7 @@ export const initXRScenePipelineModule = () => {
     onRender: () => {
       const { camera, scene, renderer, sceneTarget, bloomComposer, composer } =
         xrSceneData
+
       if (cameraTexture) {
         renderer.copyFramebufferToTexture(
           cameraTextureCopyPosition,

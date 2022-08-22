@@ -2,7 +2,7 @@ import DebugPane from '../../../Experience/Utils/DebugPane'
 
 export const debugRenderer = (renderer) => {
   const folderName = 'Renderer'
-  DebugPane.createFolder(folderName)
+  DebugPane.createFolder(folderName, false)
 
   DebugPane.addSlider(
     renderer,
@@ -19,7 +19,7 @@ export const debugRenderer = (renderer) => {
 
 export const debugBloomPass = (pass) => {
   const folderName = 'Bloom'
-  DebugPane.createFolder(folderName)
+  DebugPane.createFolder(folderName, false)
 
   DebugPane.addSlider(
     pass,
